@@ -1,0 +1,65 @@
+{
+  "id": "reel_mwtm9zcl_2603be",
+  "topic": "قالب البطاقات: مقارنة",
+  "title": "قالب البطاقات: مقارنة",
+  "durationSec": 10,
+  "voiceMode": "tts",
+  "voiceId": "",
+  "sources": [],
+  "createdAt": "2026-11-23T18:46:21.237Z",
+  "updatedAt": "2026-11-23T18:46:44.310Z",
+  "activeStage": null,
+  "stages": {
+    "script": {
+      "status": "done",
+      "mode": "approval",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "voice": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "timing": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "storyboard": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "render": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    }
+  },
+  "artifacts": {
+    "scriptText": "الضوء مش لحظي ليه سرعة محددة.",
+    "streamText": "",
+    "audioDuration": 2.71,
+    "hasAudio": true,
+    "wordCount": 6,
+    "weakWordCount": 0,
+    "sceneCount": 1,
+    "hasVideo": true,
+    "hasContactSheet": true
+  }
+}

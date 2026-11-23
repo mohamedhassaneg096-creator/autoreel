@@ -1,0 +1,6 @@
+{
+  "name": "Reel Studio v1",
+  "description": "Local Arabic (Egyptian dialect) science-explainer vertical reel studio powered by LLM, ElevenLabs, Deepgram, Playwright, and FFmpeg.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

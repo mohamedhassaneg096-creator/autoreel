@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "type": "intro",
+      "template": "cards",
+      "at": 0,
+      "title": "خرافة مقابل حقيقة",
+      "left": {
+        "label": "الظن الشائع: لحظي",
+        "value": "∞",
+        "icon": "cross",
+        "resolvedIcon": "cross"
+      },
+      "right": {
+        "label": "الحقيقة العلمية",
+        "value": "300,000 km/s",
+        "icon": "check",
+        "resolvedIcon": "check"
+      },
+      "subtitle": "",
+      "icon": "atom",
+      "resolvedIcon": "atom"
+    }
+  ],
+  "accents": [
+    [
+      1,
+      "accent"
+    ],
+    [
+      5,
+      "success"
+    ]
+  ]
+}

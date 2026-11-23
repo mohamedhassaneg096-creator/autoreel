@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "type": "intro",
+      "template": "body",
+      "at": 0,
+      "title": "كسر جوه عضمك",
+      "subtitle": "من غير جراحة",
+      "icon": "bone",
+      "organ": "bone",
+      "resolvedIcon": "bone",
+      "resolvedOrgan": "bone"
+    },
+    {
+      "type": "question",
+      "template": "cards",
+      "at": 7,
+      "title": "عارف ليه؟",
+      "subtitle": "السر في الضل",
+      "left": {
+        "label": "كشاف وإيدك",
+        "icon": "flashlight",
+        "resolvedIcon": "flashlight"
+      },
+      "right": {
+        "label": "ضل على الحيطة",
+        "icon": "shadow",
+        "resolvedIcon": "shadow"
+      },
+      "icon": "atom",
+      "resolvedIcon": "atom"
+    },
+    {
+      "type": "process",
+      "template": "flow",
+      "at": 15,
+      "title": "رحلة الأشعة",
+      "steps": [
+        {
+          "label": "أشعة X-rays",
+          "icon": "xray-beam",
+          "resolvedIcon": "xray-beam"
+        },
+        {
+          "label": "تعدي اللحم",
+          "icon": "hand",
+          "resolvedIcon": "hand"
+        },
+        {
+          "label": "يوقفها Calcium",
+          "icon": "calcium-crystal",
+          "resolvedIcon": "calcium-crystal"
+        }
+      ],
+      "subtitle": "",
+      "icon": "atom",
+      "resolvedIcon": "atom"
+    },
+    {
+      "type": "recap",
+      "template": "zoom",
+      "at": 22,
+      "title": "ضل عضمك",
+      "macro": {
+        "label": "صورة الأشعة",
+        "icon": "film-plate",
+        "resolvedIcon": "film-plate"
+      },
+      "micro": {
+        "label": "كثافة Calcium",
+        "icon": "bone-fracture",
+        "resolvedIcon": "bone-fracture"
+      },
+      "subtitle": "",
+      "icon": "atom",
+      "resolvedIcon": "atom"
+    }
+  ],
+  "accents": [
+    [
+      2,
+      "warning"
+    ],
+    [
+      7,
+      "accent"
+    ],
+    [
+      16,
+      "second"
+    ],
+    [
+      27,
+      "success"
+    ]
+  ]
+}

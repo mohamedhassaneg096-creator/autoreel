@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reel Studio v1 — استوديو الريلز العلمية</title>
+  <link rel="stylesheet" href="/api/fonts/css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 3-Zone Top Bar -->
+    <header class="topbar">
+      <a href="#workspace" class="brand" id="brand-link">استوديو الريلز</a>
+
+      <nav class="topnav" aria-label="التنقل الرئيسي">
+        <button type="button" class="nav-link active" data-view="workspace">مساحة العمل</button>
+        <button type="button" class="nav-link" data-view="settings">الإعدادات</button>
+        <button type="button" class="nav-link" data-view="icons">مكتبة الأيقونات</button>
+      </nav>
+
+      <div class="top-actions">
+        <button type="button" class="btn btn-primary" id="btn-new-project-focus">مشروع جديد</button>
+      </div>
+    </header>
+
+    <!-- View: Workspace -->
+    <main class="view active" id="view-workspace">
+      <div class="workspace-grid">
+        <!-- Sidebar: Create + Projects -->
+        <aside class="sidebar">
+          <section class="panel">
+            <h2 class="panel-title">إنشاء ريل جديد</h2>
+            <form id="new-project-form" class="form-stack">
+              <label class="field">
+                <span class="field-label">موضوع الحلقة العلمية</span>
+                <textarea id="input-topic" rows="3" placeholder="مثال: إزاي الأشعة السينية بتشوف عضمك؟" required></textarea>
+              </label>
+
+              <div class="field">
+                <span class="field-label">مدة الفيديو</span>
+                <div class="seg-group" id="duration-group">
+                  <button type="button" class="seg-btn active" data-dur="10">10 ث</button>
+                  <button type="button" class="seg-btn" data-dur="20">20 ث</button>
+                  <button type="button" class="seg-btn" data-dur="30">30 ث</button>
+                  <button type="button" class="seg-btn" data-dur="45">45 ث</button>
+                  <button type="button" class="seg-btn" data-dur="60">60 ث</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="field-label">مصدر الصوت</span>
+                <div class="seg-group" id="voicemode-group">
+                  <button type="button" class="seg-btn active" data-vmode="tts">توليد ElevenLabs</button>
+                  <button type="button" class="seg-btn" data-vmode="upload">رفع ملف صوتي</button>
+                </div>
+              </div>
+
+              <div class="field" id="tts-voice-picker-wrap">
+                <div class="field-row">
+                  <span class="field-label">الصوت المختار</span>
+                  <button type="button" class="link-btn" id="btn-load-voices-quick">تحميل الأصوات</button>
+                </div>
+                <select id="select-voice-quick">
+                  <option value="">الصوت الافتراضي من الإعدادات</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary full-width" id="btn-create-and-run">
+                ابدأ الإنتاج
+              </button>
+            </form>
+          </section>
+
+          <section class="panel projects-panel">
+            <div class="panel-head-row">
+              <h2 class="panel-title">المشاريع المحفوظة</h2>
+              <span class="muted-meta tabular" id="projects-count">0</span>
+            </div>
+            <div class="projects-list" id="projects-list"></div>
+          </section>
+        </aside>
+
+        <!-- Main Stage Console -->
+        <section class="main-console" id="main-console">
+          <div class="empty-state" id="no-project-state">
+            <h2>اختر مشروعاً أو ابدأ بموضوع جديد</h2>
+            <p class="muted">يحوّل Reel Studio أي موضوع علمي إلى فيديو رأسي (1080×1920) بالعامية المصرية عبر 5 مراحل متصلة.</p>
+          </div>
+
+          <div class="project-workspace hidden" id="project-workspace">
+            <!-- Project Header & Pipeline Stepper -->
+            <section class="panel pipeline-header">
+              <div class="project-title-row">
+                <div>
+                  <h1 class="project-heading" id="proj-title">...</h1>
+                  <div class="project-meta-line" id="proj-meta"></div>
+                </div>
+                <div class="project-top-controls">
+                  <button type="button" class="btn btn-danger hidden" id="btn-cancel-run">إيقاف التشغيل</button>
+                  <button type="button" class="btn btn-ghost" id="btn-delete-project">حذف المشروع</button>
+                </div>
+              </div>
+
+              <!-- 5 Stages Stepper -->
+              <div class="stages-rail" id="stages-rail"></div>
+            </section>
+
+            <!-- Active Stage Workbench -->
+            <div class="workbench-split">
+              <section class="panel stage-editor-panel" id="stage-editor-panel"></section>
+
+              <aside class="panel preview-rail">
+                <h3 class="panel-title">المعاينة الحية والمخرجات</h3>
+                <div class="phone-frame" id="phone-frame">
+                  <img id="live-preview-img" class="hidden" alt="معاينة الإطار الحالي" />
+                  <video id="final-video-player" class="hidden" controls playsinline></video>
+                  <div class="phone-placeholder" id="phone-placeholder">
+                    <span>720×1280 → 1080×1920</span>
+                    <span class="muted">ستظهر المعاينة الحية أثناء الريندر</span>
+                  </div>
+                </div>
+
+                <div class="render-progress-box hidden" id="render-progress-box">
+                  <div class="progress-label-row">
+                    <span id="render-progress-text">جاري التصوير...</span>
+                    <span class="tabular" id="render-progress-pct">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" id="render-progress-fill"></div>
+                  </div>
+                </div>
+
+                <div class="video-actions hidden" id="video-actions">
+                  <a class="btn btn-primary full-width" id="btn-download-mp4" download>تحميل الفيديو MP4</a>
+                  <button type="button" class="btn btn-secondary full-width" id="btn-toggle-contact-sheet">عرض لوحة الإطارات</button>
+                </div>
+
+                <div class="contact-sheet-wrap hidden" id="contact-sheet-wrap">
+                  <img id="contact-sheet-img" alt="لوحة إطارات الريندر" />
+                </div>
+
+                <div class="log-box">
+                  <div class="log-head">سجل المرحلة</div>
+                  <pre class="log-pre" id="stage-log-pre"></pre>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- View: Settings -->
+    <main class="view" id="view-settings">
+      <div class="settings-container">
+        <section class="panel">
+          <div class="panel-head-row">
+            <div>
+              <h1 class="panel-heading">إعدادات واجهات البرمجة والخطوط</h1>
+              <p class="muted">تُحفظ الإعدادات محلياً في data/settings.json وتُقرأ القيم الافتراضية من .env. المفاتيح تُعرض مقنّعة بآخر ٤ أحرف فقط.</p>
+            </div>
+            <button type="button" class="btn btn-primary" id="btn-save-settings">حفظ الإعدادات</button>
+          </div>
+
+          <form id="settings-form" class="settings-grid">
+            <div class="settings-block">
+              <h3>١. نموذج اللغة (FreeLLMAPI / OpenAI-compatible)</h3>
+              <label class="field">
+                <span class="field-label">Base URL</span>
+                <input type="text" id="set-llm-url" dir="ltr" placeholder="http://127.0.0.1:31415/v1" />
+              </label>
+              <label class="field">
+                <span class="field-label">Model</span>
+                <input type="text" id="set-llm-model" dir="ltr" placeholder="auto" />
+              </label>
+              <label class="field">
+                <div class="field-row">
+                  <span class="field-label">API Key (اختياري لـ FreeLLMAPI)</span>
+                  <button type="button" class="link-btn" data-clear="llm">مسح المفتاح</button>
+                </div>
+                <input type="password" id="set-llm-key" dir="ltr" autocomplete="off" placeholder="أدخل مفتاحاً جديداً للاستبدال" />
+                <span class="muted-meta tabular" id="mask-llm"></span>
+              </label>
+            </div>
+
+            <div class="settings-block">
+              <h3>٢. التعليق الصوتي (ElevenLabs)</h3>
+              <label class="field">
+                <span class="field-label">Base URL</span>
+                <input type="text" id="set-el-url" dir="ltr" placeholder="https://api.elevenlabs.io" />
+              </label>
+              <label class="field">
+                <div class="field-row">
+                  <span class="field-label">API Key</span>
+                  <button type="button" class="link-btn" data-clear="el">مسح المفتاح</button>
+                </div>
+                <input type="password" id="set-el-key" dir="ltr" autocomplete="off" placeholder="xi-api-key" />
+                <span class="muted-meta tabular" id="mask-el"></span>
+              </label>
+              <div class="field">
+                <div class="field-row">
+                  <span class="field-label">الصوت الافتراضي (Voice ID)</span>
+                  <button type="button" class="link-btn" id="btn-load-voices-settings">تحميل الأصوات</button>
+                </div>
+                <div class="inline-pair">
+                  <input type="text" id="set-el-voice" dir="ltr" placeholder="21m00Tcm4TlvDq8ikWAM" />
+                  <select id="select-voice-settings">
+                    <option value="">اختر من القائمة...</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-block">
+              <h3>٣. توقيت الصوت المرفوع (Deepgram nova-3)</h3>
+              <label class="field">
+                <span class="field-label">Base URL</span>
+                <input type="text" id="set-dg-url" dir="ltr" placeholder="https://api.deepgram.com" />
+              </label>
+              <label class="field">
+                <div class="field-row">
+                  <span class="field-label">API Key</span>
+                  <button type="button" class="link-btn" data-clear="dg">مسح المفتاح</button>
+                </div>
+                <input type="password" id="set-dg-key" dir="ltr" autocomplete="off" placeholder="Token key" />
+                <span class="muted-meta tabular" id="mask-dg"></span>
+              </label>
+            </div>
+
+            <div class="settings-block">
+              <h3>٤. مجلد الخطوط العربية</h3>
+              <label class="field">
+                <span class="field-label">مسار مجلد الخطوط (font folder)</span>
+                <input type="text" id="set-font-folder" dir="ltr" placeholder="assets/fonts" />
+              </label>
+              <p class="muted">الافتراضي: IBM Plex Sans Arabic (OFL) في <code>assets/fonts</code>. يمكنك تحديد أي مجلد يحتوي ملفات <code>.woff2</code> أو <code>.ttf</code>.</p>
+            </div>
+          </form>
+          <div class="status-banner hidden" id="settings-feedback"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- View: Icons Library -->
+    <main class="view" id="view-icons">
+      <div class="settings-container">
+        <section class="panel">
+          <div class="panel-head-row">
+            <div>
+              <h1 class="panel-heading">مكتبة الأيقونات المحلية</h1>
+              <p class="muted" id="icons-license-summary">أيقونات مرسومة يدوياً + Health Icons (CC0) + Tabler Icons (MIT)</p>
+            </div>
+            <input type="search" id="icons-search" class="search-input" placeholder="ابحث باسم أو وسم إنجليزي..." />
+          </div>
+          <div class="icons-grid" id="icons-grid"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=720, height=1280, initial-scale=1.0" />
+  <title>Reel Studio Renderer</title>
+  <link id="dynamic-fonts" rel="stylesheet" href="/api/fonts/css" />
+  <style>
+    :root {
+      --bg: #0C1014;
+      --card: #161C22;
+      --elevated: #202830;
+      --text: #F4F3EE;
+      --secondary: #9AA5AE;
+      --accent: #27B8C7;
+      --second: #5978FF;
+      --success: #36C98F;
+      --warning: #F28A30;
+      --border: rgba(244, 243, 238, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 720px;
+      height: 1280px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'ReelArabic', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .stage {
+      position: relative;
+      width: 720px;
+      height: 1280px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* Faint technical grid */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(154, 165, 174, 0.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(154, 165, 174, 0.045) 1px, transparent 1px),
+        linear-gradient(to right, rgba(39, 184, 199, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(39, 184, 199, 0.05) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+      pointer-events: none;
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 38%, transparent 35%, rgba(12, 16, 20, 0.72) 100%);
+      pointer-events: none;
+    }
+
+    /* Top progress rail */
+    .top-rail {
+      position: absolute;
+      top: 24px;
+      left: 36px;
+      right: 36px;
+      height: 4px;
+      background: rgba(154, 165, 174, 0.14);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .top-rail-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--second), var(--accent));
+      border-radius: 4px;
+    }
+
+    /* Top series header */
+    .series-header {
+      position: absolute;
+      top: 48px;
+      left: 36px;
+      right: 36px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .series-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--card);
+      border: 1px solid rgba(39, 184, 199, 0.35);
+      border-radius: 12px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .series-tag-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .episode-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--secondary);
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 420px;
+    }
+
+    /* Film Card */
+    .film-card {
+      position: absolute;
+      top: 124px;
+      left: 36px;
+      width: 648px;
+      height: 700px;
+      background: var(--card);
+      border: 1px solid rgba(244, 243, 238, 0.1);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    }
+
+    .film-card-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 50% 45%, rgba(39, 184, 199, 0.08), transparent 64%),
+        linear-gradient(to right, rgba(154, 165, 174, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(154, 165, 174, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+      pointer-events: none;
+    }
+
+    .film-camera {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 28px 30px;
+      display: flex;
+      flex-direction: column;
+      transform-origin: 50% 50%;
+    }
+
+    .scene-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      z-index: 2;
+    }
+
+    .scene-type-badge {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(39, 184, 199, 0.12);
+      border: 1px solid rgba(39, 184, 199, 0.28);
+      padding: 4px 12px;
+      border-radius: 8px;
+    }
+
+    .scene-index-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      color: var(--secondary);
+      direction: ltr;
+    }
+
+    .scene-heading {
+      z-index: 2;
+      margin-bottom: 18px;
+    }
+
+    .scene-title {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .scene-subtitle {
+      margin-top: 6px;
+      font-size: 21px;
+      font-weight: 500;
+      color: var(--secondary);
+    }
+
+    .scene-canvas {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Captions Area */
+    .captions-wrap {
+      position: absolute;
+      top: 852px;
+      left: 36px;
+      right: 36px;
+      height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px 16px;
+    }
+
+    .caption-line {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: baseline;
+      gap: 12px 14px;
+      direction: rtl;
+      line-height: 1.55;
+      max-width: 630px;
+    }
+
+    .cap-word {
+      position: relative;
+      display: inline-block;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--secondary);
+      opacity: 0.48;
+      transform-origin: center bottom;
+      padding-bottom: 6px;
+    }
+
+    .cap-word.spoken {
+      opacity: 1;
+      color: var(--text);
+    }
+
+    .cap-word.tone-accent.spoken { color: var(--accent); }
+    .cap-word.tone-second.spoken { color: var(--second); }
+    .cap-word.tone-success.spoken { color: var(--success); }
+    .cap-word.tone-warning.spoken { color: var(--warning); }
+
+    .cap-underline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      border-radius: 3px;
+      background: var(--accent);
+      transform-origin: right center;
+      transform: scaleX(0);
+    }
+
+    /* Bottom telemetry bar */
+    .bottom-strip {
+      position: absolute;
+      bottom: 34px;
+      left: 36px;
+      right: 36px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(154, 165, 174, 0.14);
+      padding-top: 12px;
+    }
+
+    .wave-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 24px;
+      direction: ltr;
+    }
+
+    .wave-bar {
+      width: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      opacity: 0.5;
+    }
+
+    .timecode {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 16px;
+      color: var(--secondary);
+      direction: ltr;
+    }
+
+    /* Shared template helpers */
+    .node-card {
+      background: var(--elevated);
+      border: 1px solid rgba(244, 243, 238, 0.1);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .icon-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: rgba(39, 184, 199, 0.1);
+      border: 1px solid rgba(39, 184, 199, 0.25);
+    }
+
+    .icon-svg {
+      display: block;
+    }
+
+    .ltr-num {
+      direction: ltr;
+      unicode-bidi: isolate;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="grid-bg"></div>
+    <div class="vignette"></div>
+
+    <div class="top-rail">
+      <div class="top-rail-fill" id="top-rail-fill"></div>
+    </div>
+
+    <header class="series-header">
+      <div class="series-tag">
+        <span class="series-tag-dot"></span>
+        <span>عارف ليه؟</span>
+      </div>
+      <div class="episode-title" id="episode-title">شرح علمي</div>
+    </header>
+
+    <main class="film-card" id="film-card">
+      <div class="film-card-grid"></div>
+      <div class="film-camera" id="film-camera">
+        <div class="scene-meta">
+          <span class="scene-type-badge" id="scene-type-badge">مقدمة</span>
+          <span class="scene-index-label" id="scene-index-label">01 / 01</span>
+        </div>
+        <div class="scene-heading" id="scene-heading">
+          <div class="scene-title" id="scene-title">...</div>
+          <div class="scene-subtitle" id="scene-subtitle"></div>
+        </div>
+        <div class="scene-canvas" id="scene-canvas"></div>
+      </div>
+    </main>
+
+    <section class="captions-wrap" id="captions-wrap"></section>
+
+    <footer class="bottom-strip">
+      <div class="wave-bars" id="wave-bars"></div>
+      <div class="timecode" id="timecode">00:00.0 / 00:10.0</div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const PALETTE = {
+        bg: '#0C1014',
+        card: '#161C22',
+        elevated: '#202830',
+        text: '#F4F3EE',
+        secondary: '#9AA5AE',
+        accent: '#27B8C7',
+        second: '#5978FF',
+        success: '#36C98F',
+        warning: '#F28A30'
+      };
+
+      const TYPE_LABELS_AR = {
+        intro: 'الخطّاف',
+        question: 'سؤال السلسلة',
+        concept: 'التشبيه',
+        process: 'الآلية',
+        compare: 'مقارنة',
+        stat: 'أرقام وحقائق',
+        recap: 'الخلاصة'
+      };
+
+      let STATE = {
+        title: 'عارف ليه؟',
+        duration: 10,
+        words: [],
+        storyboard: { scenes: [], accents: [] },
+        icons: {},
+        chunks: [],
+        accentMap: new Map()
+      };
+
+      // Easing utilities (pure functions of p in [0,1])
+      const clamp01 = (v) => Math.max(0, Math.min(1, v));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const easeOutCubic = (x) => 1 - Math.pow(1 - clamp01(x), 3);
+      const easeInOutCubic = (x) => {
+        const t = clamp01(x);
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+      const easeOutBack = (x) => {
+        const t = clamp01(x);
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+      };
+
+      function buildCaptionChunks(words) {
+        if (!words || words.length === 0) return [];
+        const chunks = [];
+        let cur = [];
+        for (let i = 0; i < words.length; i++) {
+          cur.push(words[i]);
+          const charLen = cur.reduce((s, w) => s + (w.text || '').length + 1, 0);
+          const breakHere = words[i].isLineEnd || cur.length >= 5 || charLen >= 28;
+          if (breakHere || i === words.length - 1) {
+            chunks.push({
+              words: cur,
+              start: cur[0].start,
+              end: cur[cur.length - 1].end
+            });
+            cur = [];
+          }
+        }
+        return chunks;
+      }
+
+      function renderIconHtml(iconId, size = 48, color = PALETTE.accent, drawProgress = 1) {
+        const icon = STATE.icons[iconId] || STATE.icons['atom'] || Object.values(STATE.icons)[0];
+        if (!icon) {
+          return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>`;
+        }
+        const vb = icon.viewBox || '0 0 24 24';
+        const isFill = icon.mode === 'fill';
+        const dashStyle = !isFill && drawProgress < 0.999
+          ? `stroke-dasharray: 220; stroke-dashoffset: ${((1 - clamp01(drawProgress)) * 220).toFixed(1)};`
+          : '';
+        if (isFill) {
+          return `<svg class="icon-svg" width="${size}" height="${size}" viewBox="${vb}" fill="${color}" style="color:${color};">${icon.body}</svg>`;
+        }
+        return `<svg class="icon-svg" width="${size}" height="${size}" viewBox="${vb}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:${color};${dashStyle}">${icon.body}</svg>`;
+      }
+
+      // Compute scene windows from word indices
+      function computeSceneWindows(scenes, words, totalDuration) {
+        if (!scenes || scenes.length === 0) return [];
+        const dur = Math.max(totalDuration || 10, words.length ? words[words.length - 1].end + 0.5 : 10);
+        return scenes.map((sc, idx) => {
+          const wStart = words[sc.at] ? words[sc.at].start : 0;
+          const start = idx === 0 ? 0 : wStart;
+          const nextSc = scenes[idx + 1];
+          const end = nextSc
+            ? (words[nextSc.at] ? words[nextSc.at].start : dur)
+            : dur;
+          return {
+            ...sc,
+            index: idx,
+            start,
+            end: Math.max(start + 0.4, end)
+          };
+        });
+      }
+
+      // 9 Template Renderers (all strictly deterministic from `localP` = progress in [0,1] and `t`)
+      function renderTemplateBody(sc, p, t) {
+        const organId = sc.resolvedOrgan || sc.resolvedIcon || 'heart-organ';
+        const bodyId = STATE.icons['body'] ? 'body' : 'human-silhouette';
+        const pop = easeOutBack(clamp01(p * 2.4));
+        const lineP = easeOutCubic(clamp01((p - 0.15) * 2.5));
+        const scanY = 48 + ((Math.sin(t * 2.5) * 0.5 + 0.5) * 260);
+
+        const organOffsets = {
+          'neurology': { x: 146, y: 52 },
+          'skull': { x: 146, y: 52 },
+          'eye': { x: 146, y: 58 },
+          'heart-organ': { x: 158, y: 128 },
+          'lungs': { x: 146, y: 122 },
+          'stomach': { x: 152, y: 168 },
+          'kidneys': { x: 146, y: 175 },
+          'bone': { x: 118, y: 190 },
+          'bone-fracture': { x: 118, y: 190 }
+        };
+        const pos = organOffsets[organId] || { x: 146, y: 132 };
+
+        return `
+          <div style="position:relative;width:580px;height:420px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="position:relative;width:270px;height:390px;background:rgba(32,40,48,0.65);border:1px solid rgba(39,184,199,0.22);border-radius:20px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <div style="position:absolute;left:16px;right:16px;top:${scanY.toFixed(1)}px;height:2px;background:linear-gradient(90deg,transparent,${PALETTE.accent},transparent);opacity:0.7;"></div>
+              <div style="opacity:0.38;">
+                ${renderIconHtml(bodyId, 260, PALETTE.secondary, 1)}
+              </div>
+              <div style="position:absolute;left:${pos.x - 42}px;top:${pos.y - 12}px;width:72px;height:72px;border-radius:50%;background:rgba(39,184,199,0.18);border:2px solid ${PALETTE.accent};display:flex;align-items:center;justify-content:center;transform:scale(${pop.toFixed(3)});box-shadow:0 0 26px rgba(39,184,199,0.35);">
+                ${renderIconHtml(organId, 42, PALETTE.accent, clamp01(p * 2))}
+              </div>
+            </div>
+
+            <svg width="64" height="200" viewBox="0 0 64 200" style="margin:0 -8px;z-index:2;flex-shrink:0;">
+              <path d="M 2 100 L 34 100 L 60 72" fill="none" stroke="${PALETTE.accent}" stroke-width="2.5" stroke-dasharray="120" stroke-dashoffset="${((1 - lineP) * 120).toFixed(1)}" />
+              <circle cx="60" cy="72" r="${(4 * lineP).toFixed(1)}" fill="${PALETTE.accent}" />
+            </svg>
+
+            <div class="node-card" style="width:248px;opacity:${clamp01(0.45 + 0.55 * easeOutCubic(clamp01(p * 2.2))).toFixed(3)};transform:translateY(${((1 - easeOutCubic(clamp01(p * 2.2))) * 16).toFixed(1)}px);">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div class="icon-box" style="width:48px;height:48px;flex-shrink:0;">
+                  ${renderIconHtml(organId, 28, PALETTE.accent, 1)}
+                </div>
+                <div style="font-size:21px;font-weight:700;color:${PALETTE.text};line-height:1.25;">${sc.subtitle || 'المنطقة المستهدفة'}</div>
+              </div>
+              <div style="height:6px;background:rgba(154,165,174,0.15);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:${(lineP * 100).toFixed(0)}%;background:${PALETTE.accent};"></div>
+              </div>
+              <div style="margin-top:10px;font-size:17px;color:${PALETTE.secondary};">فحص دقيق داخل الجسم</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTemplateZoom(sc, p) {
+        const macro = sc.macro || { label: sc.title || 'الشكل الظاهر', resolvedIcon: sc.resolvedIcon || 'hand' };
+        const micro = sc.micro || { label: sc.subtitle || 'التركيب الدقيق', resolvedIcon: sc.resolvedSecondaryIcon || 'atom' };
+        const p1 = easeOutBack(clamp01(p * 2.6));
+        const beam = easeOutCubic(clamp01((p - 0.1) * 2.4));
+        const p2 = easeOutBack(clamp01((p - 0.18) * 2.4));
+
+        return `
+          <div style="position:relative;width:570px;height:400px;display:flex;align-items:center;justify-content:space-between;">
+            <div class="node-card" style="width:210px;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transform:scale(${(0.82 + 0.18 * p1).toFixed(3)});opacity:${clamp01(0.45 + p * 2.2).toFixed(3)};">
+              <div style="font-size:14px;color:${PALETTE.secondary};">المستوى الكلي · MACRO</div>
+              <div class="icon-box" style="width:104px;height:104px;border-radius:50%;">
+                ${renderIconHtml(macro.resolvedIcon || sc.resolvedIcon, 60, PALETTE.text, 1)}
+              </div>
+              <div style="font-size:22px;font-weight:700;text-align:center;">${macro.label || ''}</div>
+            </div>
+
+            <svg width="130" height="220" viewBox="0 0 130 220" style="flex-shrink:0;">
+              <polygon points="8,75 122,20 122,200 8,145" fill="rgba(39,184,199,${(0.08 * beam).toFixed(3)})" />
+              <line x1="8" y1="75" x2="122" y2="20" stroke="${PALETTE.accent}" stroke-width="2" stroke-dasharray="140" stroke-dashoffset="${((1 - beam) * 140).toFixed(1)}" />
+              <line x1="8" y1="145" x2="122" y2="200" stroke="${PALETTE.accent}" stroke-width="2" stroke-dasharray="140" stroke-dashoffset="${((1 - beam) * 140).toFixed(1)}" />
+              <text x="65" y="116" text-anchor="middle" fill="${PALETTE.accent}" font-size="16" font-weight="700" opacity="${clamp01(0.35 + beam * 0.65).toFixed(2)}" class="ltr-num">1000×</text>
+            </svg>
+
+            <div class="node-card" style="width:230px;height:310px;border-color:rgba(39,184,199,0.42);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transform:scale(${(0.8 + 0.2 * p2).toFixed(3)});opacity:${clamp01(0.42 + p2 * 0.58).toFixed(3)};box-shadow:0 0 36px rgba(39,184,199,0.16);">
+              <div style="font-size:14px;color:${PALETTE.accent};">التكبير الدقيق · MICRO</div>
+              <div class="icon-box" style="width:124px;height:124px;border-radius:50%;background:rgba(89,120,255,0.12);border-color:rgba(89,120,255,0.4);">
+                ${renderIconHtml(micro.resolvedIcon || sc.resolvedSecondaryIcon || 'atom', 72, PALETTE.accent, clamp01(0.25 + p * 1.8))}
+              </div>
+              <div style="font-size:24px;font-weight:700;text-align:center;color:${PALETTE.accent};">${micro.label || ''}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTemplateFlow(sc, p) {
+        const steps = (Array.isArray(sc.steps) && sc.steps.length > 0)
+          ? sc.steps.slice(0, 4)
+          : [
+              { label: sc.title || 'السبب', resolvedIcon: sc.resolvedIcon || 'lightning' },
+              { label: 'التفاعل', resolvedIcon: sc.resolvedSecondaryIcon || 'wave' },
+              { label: sc.subtitle || 'النتيجة', resolvedIcon: 'check' }
+            ];
+
+        const count = steps.length;
+        const rows = steps.map((st, idx) => {
+          const threshold = idx / Math.max(1, count);
+          const sp = easeOutBack(clamp01((p - threshold * 0.65) * 2.5));
+          const arrowP = easeOutCubic(clamp01((p - (threshold + 0.12) * 0.65) * 2.6));
+          const activeColor = idx === count - 1 ? PALETTE.success : (idx === 0 ? PALETTE.accent : PALETTE.second);
+
+          const cardHtml = `
+            <div class="node-card" style="width:100%;display:flex;align-items:center;gap:18px;padding:16px 20px;border-color:${sp > 0.5 ? activeColor + '55' : 'rgba(244,243,238,0.1)'};opacity:${clamp01(0.28 + sp * 0.72).toFixed(3)};transform:translateX(${((1 - sp) * 22).toFixed(1)}px) scale(${(0.92 + 0.08 * sp).toFixed(3)});">
+              <div class="icon-box" style="width:60px;height:60px;flex-shrink:0;border-color:${activeColor}55;background:${activeColor}18;">
+                ${renderIconHtml(st.resolvedIcon || sc.resolvedIcon, 34, activeColor, clamp01(sp))}
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:14px;color:${activeColor};font-weight:600;">خطوة 0${idx + 1}</div>
+                <div style="font-size:24px;font-weight:700;color:${PALETTE.text};">${st.label || ''}</div>
+              </div>
+            </div>
+          `;
+
+          const arrowHtml = idx < count - 1 ? `
+            <svg width="40" height="30" viewBox="0 0 40 30" style="display:block;margin:2px auto;">
+              <line x1="20" y1="0" x2="20" y2="24" stroke="${PALETTE.accent}" stroke-width="2.5" stroke-dasharray="30" stroke-dashoffset="${((1 - arrowP) * 30).toFixed(1)}" />
+              <polyline points="13,18 20,25 27,18" fill="none" stroke="${PALETTE.accent}" stroke-width="2.5" opacity="${arrowP.toFixed(2)}" />
+            </svg>
+          ` : '';
+
+          return cardHtml + arrowHtml;
+        }).join('');
+
+        return `<div style="width:520px;display:flex;flex-direction:column;justify-content:center;">${rows}</div>`;
+      }
+
+      function renderTemplateCycle(sc, p, t) {
+        const steps = (Array.isArray(sc.steps) && sc.steps.length > 0)
+          ? sc.steps.slice(0, 4)
+          : [
+              { label: 'بداية', resolvedIcon: sc.resolvedIcon || 'atom' },
+              { label: 'تحول', resolvedIcon: 'cycle' },
+              { label: 'تأثير', resolvedIcon: 'wave' },
+              { label: 'عودة', resolvedIcon: 'check' }
+            ];
+        const n = steps.length;
+        const cx = 270, cy = 210, r = 138;
+        const ringDraw = easeOutCubic(clamp01(p * 2.2));
+        const rot = t * 18;
+
+        let nodesHtml = '';
+        for (let i = 0; i < n; i++) {
+          const angle = (-Math.PI / 2) + (i * 2 * Math.PI) / n;
+          const nx = cx + Math.cos(angle) * r;
+          const ny = cy + Math.sin(angle) * r;
+          const np = easeOutBack(clamp01((p - i * 0.14) * 2.5));
+          nodesHtml += `
+            <div class="node-card" style="position:absolute;left:${(nx - 84).toFixed(1)}px;top:${(ny - 42).toFixed(1)}px;width:168px;padding:10px 12px;display:flex;align-items:center;gap:10px;opacity:${clamp01(0.25 + np * 0.75).toFixed(3)};transform:scale(${(0.75 + 0.25 * np).toFixed(3)});">
+              <div class="icon-box" style="width:42px;height:42px;flex-shrink:0;">
+                ${renderIconHtml(steps[i].resolvedIcon || sc.resolvedIcon, 24, PALETTE.accent, 1)}
+              </div>
+              <div style="font-size:18px;font-weight:700;line-height:1.2;">${steps[i].label || ''}</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div style="position:relative;width:540px;height:420px;">
+            <svg width="540" height="420" viewBox="0 0 540 420" style="position:absolute;inset:0;">
+              <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(154,165,174,0.18)" stroke-width="2" />
+              <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PALETTE.accent}" stroke-width="3" stroke-dasharray="870" stroke-dashoffset="${((1 - ringDraw) * 870).toFixed(1)}" transform="rotate(${rot.toFixed(1)} ${cx} ${cy})" />
+              <circle cx="${cx}" cy="${cy}" r="50" fill="rgba(39,184,199,0.1)" stroke="rgba(39,184,199,0.35)" stroke-width="1.5" />
+            </svg>
+            <div style="position:absolute;left:${cx - 28}px;top:${cy - 28}px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
+              ${renderIconHtml(sc.resolvedIcon || 'cycle', 40, PALETTE.accent, 1)}
+            </div>
+            ${nodesHtml}
+          </div>
+        `;
+      }
+
+      function renderTemplateTimeline(sc, p) {
+        const items = (Array.isArray(sc.steps) && sc.steps.length > 0 ? sc.steps : sc.items) || [
+          { label: sc.title || 'البداية', resolvedIcon: sc.resolvedIcon || 'clock' },
+          { label: 'الآلية', resolvedIcon: 'wave' },
+          { label: sc.subtitle || 'الخلاصة', resolvedIcon: 'check' }
+        ];
+        const list = items.slice(0, 4);
+        const railP = easeOutCubic(clamp01(p * 2.0));
+
+        const rows = list.map((it, idx) => {
+          const ip = easeOutBack(clamp01((p - idx * 0.16) * 2.6));
+          const tone = idx === list.length - 1 ? PALETTE.success : PALETTE.accent;
+          return `
+            <div style="display:flex;align-items:center;gap:20px;opacity:${clamp01(0.28 + ip * 0.72).toFixed(3)};transform:translateY(${((1 - ip) * 16).toFixed(1)}px);">
+              <div style="width:36px;height:36px;border-radius:50%;background:${PALETTE.card};border:3px solid ${tone};display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:2;">
+                <span style="font-size:14px;font-weight:700;color:${tone};" class="ltr-num">${idx + 1}</span>
+              </div>
+              <div class="node-card" style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+                <div style="font-size:23px;font-weight:700;">${it.label || ''}</div>
+                <div class="icon-box" style="width:48px;height:48px;">
+                  ${renderIconHtml(it.resolvedIcon || sc.resolvedIcon, 28, tone, 1)}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div style="position:relative;width:540px;height:400px;display:flex;flex-direction:column;justify-content:space-between;padding:12px 0;">
+            <div style="position:absolute;right:16px;top:30px;bottom:30px;width:4px;background:rgba(154,165,174,0.16);border-radius:2px;">
+              <div style="width:100%;height:${(railP * 100).toFixed(1)}%;background:linear-gradient(180deg,${PALETTE.accent},${PALETTE.success});border-radius:2px;"></div>
+            </div>
+            ${rows}
+          </div>
+        `;
+      }
+
+      function renderTemplateChart(sc, p) {
+        const pts = (Array.isArray(sc.points) && sc.points.length >= 2)
+          ? sc.points.slice(0, 6)
+          : [
+              { label: '١', value: 22 },
+              { label: '٢', value: 48 },
+              { label: '٣', value: 38 },
+              { label: '٤', value: 78 },
+              { label: '٥', value: 95 }
+            ];
+        const maxVal = Math.max(10, ...pts.map((pt) => Number(pt.value) || 0));
+        const W = 520, H = 310, padX = 46, padY = 42;
+        const plotW = W - padX * 2, plotH = H - padY * 2;
+        const drawP = easeOutCubic(clamp01(p * 1.8));
+
+        const coords = pts.map((pt, i) => {
+          const x = padX + (i / (pts.length - 1)) * plotW;
+          const y = padY + plotH - ((Number(pt.value) || 0) / maxVal) * plotH;
+          return { x, y, label: pt.label || String(i + 1), value: pt.value };
+        });
+
+        const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
+        const areaD = `${pathD} L ${coords[coords.length - 1].x.toFixed(1)} ${padY + plotH} L ${coords[0].x.toFixed(1)} ${padY + plotH} Z`;
+
+        const dotsSvg = coords.map((c, i) => {
+          const dp = easeOutBack(clamp01((p - i * 0.1) * 2.8));
+          return `
+            <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${(6 * dp).toFixed(1)}" fill="${PALETTE.bg}" stroke="${PALETTE.accent}" stroke-width="3" />
+            <text x="${c.x.toFixed(1)}" y="${(c.y - 14).toFixed(1)}" text-anchor="middle" fill="${PALETTE.text}" font-size="16" font-weight="700" opacity="${dp.toFixed(2)}" class="ltr-num">${c.value}</text>
+            <text x="${c.x.toFixed(1)}" y="${H - 8}" text-anchor="middle" fill="${PALETTE.secondary}" font-size="16">${c.label}</text>
+          `;
+        }).join('');
+
+        return `
+          <div class="node-card" style="width:560px;height:360px;display:flex;align-items:center;justify-content:center;padding:16px;">
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="${PALETTE.accent}" stop-opacity="0.32" />
+                  <stop offset="100%" stop-color="${PALETTE.accent}" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+              <line x1="${padX}" y1="${padY}" x2="${padX}" y2="${padY + plotH}" stroke="rgba(154,165,174,0.25)" stroke-width="1.5" />
+              <line x1="${padX}" y1="${padY + plotH}" x2="${padX + plotW}" y2="${padY + plotH}" stroke="rgba(154,165,174,0.25)" stroke-width="1.5" />
+              <path d="${areaD}" fill="url(#chartGrad)" opacity="${drawP.toFixed(2)}" />
+              <path d="${pathD}" fill="none" stroke="${PALETTE.accent}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="900" stroke-dashoffset="${((1 - drawP) * 900).toFixed(1)}" />
+              ${dotsSvg}
+            </svg>
+          </div>
+        `;
+      }
+
+      function renderTemplateLayers(sc, p) {
+        const layers = (Array.isArray(sc.layers) && sc.layers.length > 0)
+          ? sc.layers.slice(0, 4)
+          : [
+              { label: 'الطبقة الخارجية', resolvedIcon: 'hand', tone: 'secondary' },
+              { label: 'الأنسجة الوسطى', resolvedIcon: sc.resolvedIcon || 'layers', tone: 'second' },
+              { label: sc.subtitle || 'الطبقة العميقة', resolvedIcon: sc.resolvedSecondaryIcon || 'bone', tone: 'accent' }
+            ];
+        const toneMap = {
+          accent: PALETTE.accent,
+          second: PALETTE.second,
+          success: PALETTE.success,
+          warning: PALETTE.warning,
+          secondary: PALETTE.secondary
+        };
+
+        const cards = layers.map((ly, i) => {
+          const lp = easeOutBack(clamp01((p - i * 0.14) * 2.5));
+          const c = toneMap[ly.tone] || PALETTE.accent;
+          const offset = (layers.length - 1 - i) * 6;
+          return `
+            <div class="node-card" style="width:520px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-color:${c}55;background:linear-gradient(135deg, ${PALETTE.elevated}, ${c}14);transform:translateX(${offset}px) translateY(${((1 - lp) * 22).toFixed(1)}px) scale(${(0.9 + 0.1 * lp).toFixed(3)});opacity:${clamp01(0.3 + lp * 0.7).toFixed(3)};">
+              <div style="display:flex;align-items:center;gap:16px;">
+                <div class="icon-box" style="width:56px;height:56px;border-color:${c}66;background:${c}1A;">
+                  ${renderIconHtml(ly.resolvedIcon || sc.resolvedIcon, 32, c, 1)}
+                </div>
+                <div>
+                  <div style="font-size:14px;color:${c};font-weight:600;">طبقة 0${i + 1}</div>
+                  <div style="font-size:24px;font-weight:700;color:${PALETTE.text};">${ly.label || ''}</div>
+                </div>
+              </div>
+              <div style="width:14px;height:14px;border-radius:4px;background:${c};opacity:0.85;"></div>
+            </div>
+          `;
+        }).join('');
+
+        return `<div style="display:flex;flex-direction:column;gap:16px;align-items:center;width:100%;">${cards}</div>`;
+      }
+
+      function renderTemplateCards(sc, p) {
+        const left = sc.left;
+        const right = sc.right;
+        let items = Array.isArray(sc.items) && sc.items.length > 0 ? sc.items.slice(0, 4) : null;
+        if (!items && (left || right)) {
+          items = [
+            { ...(left || { label: 'طرف أول' }), tone: PALETTE.accent },
+            { ...(right || { label: 'طرف ثانٍ' }), tone: PALETTE.second }
+          ];
+        }
+        if (!items) {
+          items = [
+            { label: sc.title || 'الفكرة الأساسية', value: sc.subtitle || '', resolvedIcon: sc.resolvedIcon || 'bulb', tone: PALETTE.accent },
+            { label: 'التطبيق', value: '', resolvedIcon: sc.resolvedSecondaryIcon || 'atom', tone: PALETTE.second }
+          ];
+        }
+
+        const isTwo = items.length <= 2;
+        const cols = isTwo ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)';
+        const colors = [PALETTE.accent, PALETTE.second, PALETTE.success, PALETTE.warning];
+
+        const html = items.map((it, idx) => {
+          const cp = easeOutBack(clamp01((p - idx * 0.14) * 2.5));
+          const col = it.tone || colors[idx % colors.length];
+          return `
+            <div class="node-card" style="min-height:${isTwo ? '280px' : '164px'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;border-color:${col}44;opacity:${clamp01(0.28 + cp * 0.72).toFixed(3)};transform:scale(${(0.82 + 0.18 * cp).toFixed(3)});">
+              <div class="icon-box" style="width:${isTwo ? '88px' : '64px'};height:${isTwo ? '88px' : '64px'};border-color:${col}55;background:${col}18;">
+                ${renderIconHtml(it.resolvedIcon || sc.resolvedIcon, isTwo ? 50 : 36, col, clamp01(cp))}
+              </div>
+              <div style="font-size:${isTwo ? '26px' : '22px'};font-weight:700;color:${PALETTE.text};">${it.label || ''}</div>
+              ${it.value ? `<div style="font-size:20px;font-weight:700;color:${col};" class="ltr-num">${it.value}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        return `<div style="width:550px;display:grid;grid-template-columns:${cols};gap:18px;">${html}</div>`;
+      }
+
+      function renderTemplateMeter(sc, p) {
+        const target = Number.isFinite(Number(sc.value)) ? Number(sc.value) : 99;
+        const unit = sc.unit || '%';
+        const maxVal = target > 100 ? target * 1.2 : 100;
+        const ratio = clamp01(target / maxVal);
+        const animP = easeOutCubic(clamp01(p * 1.9));
+        const currentVal = Math.round(target * animP);
+
+        const r = 135;
+        const circ = 2 * Math.PI * r;
+        const arcLen = circ * 0.75; // 270 degree gauge
+        const fillLen = arcLen * ratio * animP;
+        const gaugeColor = target >= 80 ? PALETTE.warning : (target >= 40 ? PALETTE.accent : PALETTE.success);
+
+        return `
+          <div style="position:relative;width:440px;height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <svg width="340" height="310" viewBox="0 0 340 310">
+              <g transform="rotate(135 170 170)">
+                <circle cx="170" cy="170" r="${r}" fill="none" stroke="rgba(154,165,174,0.16)" stroke-width="22" stroke-linecap="round" stroke-dasharray="${arcLen.toFixed(1)} ${circ.toFixed(1)}" />
+                <circle cx="170" cy="170" r="${r}" fill="none" stroke="${gaugeColor}" stroke-width="22" stroke-linecap="round" stroke-dasharray="${fillLen.toFixed(1)} ${circ.toFixed(1)}" />
+              </g>
+            </svg>
+            <div style="position:absolute;top:120px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+              <div class="icon-box" style="width:54px;height:54px;border-color:${gaugeColor}55;background:${gaugeColor}18;">
+                ${renderIconHtml(sc.resolvedIcon || 'gauge', 30, gaugeColor, 1)}
+              </div>
+              <div style="font-size:66px;font-weight:800;color:${PALETTE.text};line-height:1;" class="ltr-num">${currentVal}${unit}</div>
+              <div style="font-size:20px;font-weight:600;color:${gaugeColor};">${sc.subtitle || 'قياس علمي'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderSceneByTemplate(sc, p, t) {
+        switch (sc.template) {
+          case 'body': return renderTemplateBody(sc, p, t);
+          case 'zoom': return renderTemplateZoom(sc, p);
+          case 'flow': return renderTemplateFlow(sc, p);
+          case 'cycle': return renderTemplateCycle(sc, p, t);
+          case 'timeline': return renderTemplateTimeline(sc, p);
+          case 'chart': return renderTemplateChart(sc, p);
+          case 'layers': return renderTemplateLayers(sc, p);
+          case 'meter': return renderTemplateMeter(sc, p);
+          case 'cards':
+          default:
+            return renderTemplateCards(sc, p);
+        }
+      }
+
+      window.setRenderData = function (data) {
+        STATE.title = data.title || 'عارف ليه؟';
+        STATE.duration = Number(data.duration) || 10;
+        STATE.words = Array.isArray(data.words) ? data.words : [];
+        STATE.storyboard = data.storyboard || { scenes: [], accents: [] };
+        STATE.icons = data.icons || {};
+        STATE.chunks = buildCaptionChunks(STATE.words);
+        STATE.accentMap = new Map();
+        for (const pair of (STATE.storyboard.accents || [])) {
+          if (Array.isArray(pair) && pair.length >= 2) {
+            STATE.accentMap.set(Number(pair[0]), String(pair[1]));
+          }
+        }
+        STATE.sceneWindows = computeSceneWindows(STATE.storyboard.scenes, STATE.words, STATE.duration);
+
+        document.getElementById('episode-title').textContent = STATE.title;
+        // Pre-populate 18 wave bars
+        const waveEl = document.getElementById('wave-bars');
+        waveEl.innerHTML = Array.from({ length: 18 }, (_, i) => `<div class="wave-bar" data-idx="${i}" style="height:6px;"></div>`).join('');
+        window.drawFrame(0);
+      };
+
+      window.drawFrame = function (t) {
+        const dur = Math.max(1, STATE.duration);
+        const clampedT = Math.max(0, Math.min(dur, Number(t) || 0));
+
+        // 1. Top progress rail
+        const railFill = document.getElementById('top-rail-fill');
+        railFill.style.width = `${((clampedT / dur) * 100).toFixed(2)}%`;
+
+        // 2. Find active scene (with 0.25s anticipation so layouts never appear empty)
+        const windows = STATE.sceneWindows || [];
+        let activeScene = windows[0] || {
+          type: 'intro',
+          template: 'cards',
+          title: STATE.title,
+          subtitle: '',
+          start: 0,
+          end: dur,
+          index: 0
+        };
+        for (let i = 0; i < windows.length; i++) {
+          if (clampedT >= windows[i].start) {
+            activeScene = windows[i];
+          }
+        }
+
+        const sceneDur = Math.max(0.5, activeScene.end - activeScene.start);
+        const rawLocal = clamp01((clampedT - activeScene.start) / sceneDur);
+        // Pre-fill initial layout at >= 0.14 so frame 0 is never blank
+        const visualP = Math.max(0.14, rawLocal);
+
+        // Subtle camera push-in
+        const camScale = 1.0 + 0.035 * easeOutCubic(rawLocal);
+        const camY = (1 - easeOutCubic(clamp01(rawLocal * 4))) * 6;
+        const camEl = document.getElementById('film-camera');
+        camEl.style.transform = `scale(${camScale.toFixed(4)}) translateY(${camY.toFixed(2)}px)`;
+
+        document.getElementById('scene-type-badge').textContent = TYPE_LABELS_AR[activeScene.type] || 'شرح';
+        document.getElementById('scene-index-label').textContent =
+          `${String((activeScene.index || 0) + 1).padStart(2, '0')} / ${String(Math.max(1, windows.length)).padStart(2, '0')}`;
+        document.getElementById('scene-title').textContent = activeScene.title || STATE.title;
+        document.getElementById('scene-subtitle').textContent = activeScene.subtitle || '';
+
+        const canvasEl = document.getElementById('scene-canvas');
+        canvasEl.innerHTML = renderSceneByTemplate(activeScene, visualP, clampedT);
+
+        // 3. Captions (chunked words, exact onset highlighting)
+        const chunks = STATE.chunks || [];
+        let activeChunk = chunks[0] || null;
+        for (let i = 0; i < chunks.length; i++) {
+          if (clampedT >= chunks[i].start - 0.04) {
+            activeChunk = chunks[i];
+          }
+        }
+
+        const capWrap = document.getElementById('captions-wrap');
+        if (activeChunk && activeChunk.words.length > 0) {
+          const wordsHtml = activeChunk.words.map((w) => {
+            const spoken = clampedT >= w.start;
+            const isSpeakingNow = clampedT >= w.start && clampedT <= w.end;
+            const tone = STATE.accentMap.get(w.index) || '';
+            const toneClass = tone && tone !== 'underline' ? `tone-${tone}` : '';
+            const hasUnderline = tone === 'underline';
+            const wordProg = clamp01((clampedT - w.start) / Math.max(0.08, w.end - w.start));
+            const popScale = isSpeakingNow ? (1 + 0.07 * Math.sin(Math.PI * wordProg)) : 1;
+
+            return `<span class="cap-word ${spoken ? 'spoken' : ''} ${toneClass}" style="transform:scale(${popScale.toFixed(3)})">
+              ${w.text}
+              ${hasUnderline ? `<span class="cap-underline" style="transform:scaleX(${(spoken ? easeOutCubic(wordProg) : 0).toFixed(3)})"></span>` : ''}
+            </span>`;
+          }).join('');
+          capWrap.innerHTML = `<div class="caption-line">${wordsHtml}</div>`;
+        } else {
+          capWrap.innerHTML = '';
+        }
+
+        // 4. Bottom telemetry waveform + timecode
+        const activeWord = STATE.words.find((w) => clampedT >= w.start && clampedT <= w.end);
+        const energy = activeWord ? 1.0 : 0.25;
+        const bars = document.querySelectorAll('.wave-bar');
+        bars.forEach((b, i) => {
+          const h = 4 + energy * 18 * (0.35 + 0.65 * Math.abs(Math.sin(clampedT * 11 + i * 0.75)));
+          b.style.height = `${h.toFixed(1)}px`;
+          b.style.opacity = activeWord ? '0.9' : '0.3';
+        });
+
+        const fmt = (sec) => {
+          const m = Math.floor(sec / 60);
+          const s = (sec % 60).toFixed(1).padStart(4, '0');
+          return `${String(m).padStart(2, '0')}:${s}`;
+        };
+        document.getElementById('timecode').textContent = `${fmt(clampedT)} / ${fmt(dur)}`;
+      };
+    })();
+  </script>
+</body>
+</html>

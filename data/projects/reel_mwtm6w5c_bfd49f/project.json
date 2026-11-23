@@ -1,0 +1,65 @@
+{
+  "id": "reel_mwtm6w5c_bfd49f",
+  "topic": "قالب التكبير: الذرة",
+  "title": "قالب التكبير: الذرة",
+  "durationSec": 10,
+  "voiceMode": "tts",
+  "voiceId": "",
+  "sources": [],
+  "createdAt": "2026-11-23T18:43:57.121Z",
+  "updatedAt": "2026-11-23T18:44:21.538Z",
+  "activeStage": null,
+  "stages": {
+    "script": {
+      "status": "done",
+      "mode": "approval",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "voice": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "timing": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "storyboard": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "render": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    }
+  },
+  "artifacts": {
+    "scriptText": "قطعة الحديد جواها ذرات بتتحرك بسرعة.",
+    "streamText": "",
+    "audioDuration": 2.71,
+    "hasAudio": true,
+    "wordCount": 6,
+    "weakWordCount": 0,
+    "sceneCount": 1,
+    "hasVideo": true,
+    "hasContactSheet": true
+  }
+}

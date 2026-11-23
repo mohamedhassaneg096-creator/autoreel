@@ -1,0 +1,65 @@
+{
+  "id": "reel_mwtm8yev_1c32c2",
+  "topic": "قالب الرسم البياني: الحرارة",
+  "title": "قالب الرسم البياني: الحرارة",
+  "durationSec": 10,
+  "voiceMode": "tts",
+  "voiceId": "",
+  "sources": [],
+  "createdAt": "2026-11-23T18:45:33.367Z",
+  "updatedAt": "2026-11-23T18:45:56.771Z",
+  "activeStage": null,
+  "stages": {
+    "script": {
+      "status": "done",
+      "mode": "approval",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "voice": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "timing": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "storyboard": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "render": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    }
+  },
+  "artifacts": {
+    "scriptText": "كل ما الحرارة تزيد تزيد الطاقة.",
+    "streamText": "",
+    "audioDuration": 2.71,
+    "hasAudio": true,
+    "wordCount": 6,
+    "weakWordCount": 0,
+    "sceneCount": 1,
+    "hasVideo": true,
+    "hasContactSheet": true
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "id": "reel_mwtm2ztq_b3bd9f",
+  "topic": "إزاي الأشعة السينية بتشوف عضمك؟",
+  "title": "إزاي الأشعة بتشوف عضمك؟",
+  "durationSec": 10,
+  "voiceMode": "upload",
+  "voiceId": "",
+  "sources": [
+    "National Institute of Biomedical Imaging and Bioengineering (NIBIB)"
+  ],
+  "createdAt": "2026-11-23T18:40:55.262Z",
+  "updatedAt": "2026-11-23T18:42:29.932Z",
+  "activeStage": null,
+  "stages": {
+    "script": {
+      "status": "done",
+      "mode": "approval",
+      "error": null,
+      "startedAt": "2026-11-23T18:40:55.264Z",
+      "finishedAt": "2026-11-23T18:40:55.658Z",
+      "logs": [
+        "[18:40:55] كتابة سكريبت بالعامية المصرية (10 ثانية ≈ 26 كلمة)...",
+        "[18:40:55] تم توليد السكريبت: \"إزاي الأشعة بتشوف عضمك؟\" (28 كلمة).",
+        "[18:40:55] بانتظار مراجعتك وموافقتك للمتابعة.",
+        "[18:40:55] تمت الموافقة على المرحلة."
+      ]
+    },
+    "voice": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": "2026-11-23T18:40:55.661Z",
+      "finishedAt": "2026-11-23T18:40:56.017Z",
+      "logs": [
+        "[18:40:55] توليد التعليق الصوتي عبر ElevenLabs (voice: 21m00Tcm4TlvDq8ikWAM)...",
+        "[18:40:56] تم توليد الصوت (10.97 ثانية، 28 كلمة مؤقتة).",
+        "[18:42:28] تم رفع ملف صوتي مخصص (10.97 ثانية)."
+      ]
+    },
+    "timing": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": "2026-11-23T18:42:28.201Z",
+      "finishedAt": "2026-11-23T18:42:28.211Z",
+      "logs": [
+        "[18:42:28] تحليل التوقيت عبر Deepgram (nova-3, ar, punctuate)...",
+        "[18:42:28] تم استلام 17 كلمة من Deepgram.",
+        "[18:42:28] تمت المحاذاة عبر LCS على 28 كلمة (كلمات ضعيفة: 19)."
+      ]
+    },
+    "storyboard": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": "2026-11-23T18:42:28.212Z",
+      "finishedAt": "2026-11-23T18:42:28.924Z",
+      "logs": [
+        "[18:42:28] Pass 1: توليد المسودة الأولى للستوري بورد من النموذج...",
+        "[18:42:28] Pass 1 اكتمل (4 مشاهد). جاري المراجعة الذاتية (Pass 2)...",
+        "[18:42:28] تنبيه: تعذّر إكمال المراجعة الثانية، تم اعتماد المسودة المُصلحة (fetch failed)."
+      ]
+    },
+    "render": {
+      "status": "error",
+      "mode": "auto",
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4311/render/render.html\nCall log:\n  - navigating to \"http://127.0.0.1:4311/render/render.html\", waiting until \"networkidle\"\n",
+      "startedAt": "2026-11-23T18:42:28.925Z",
+      "finishedAt": "2026-11-23T18:42:29.932Z",
+      "logs": [
+        "[18:42:29] تجهيز الصوت والمؤثرات (3 انتقالات) وضبط المستوى على -14 LUFS...",
+        "[18:42:29] تشغيل Chromium (720×1280 @1.5x → 1080×1920) لتصوير 340 إطاراً...",
+        "[18:42:29] خطأ: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4311/render/render.html\nCall log:\n  - navigating to \"http://127.0.0.1:4311/render/render.html\", waiting until \"networkidle\"\n"
+      ]
+    }
+  },
+  "artifacts": {
+    "scriptText": "الدكتور شاف الكسر اللي في عضمك بدون جراحة.\nعارف ليه؟ السر كله في الضل.\nأشعة X-rays بتعدي لحمك بسهولة لكن Calcium عضمك بيوقفها.\nصورة الأشعة دي ضل عضمك.",
+    "streamText": "TITLE: إزاي الأشعة بتشوف عضمك؟\nSCRIPT:\nالدكتور شاف الكسر اللي في عضمك بدون جراحة.\nعارف ليه؟ السر كله في الضل.\nأشعة X-rays بتعدي لحمك بسهولة لكن Calcium عضمك بيوقفها.\nصورة الأشعة دي ضل عضمك.\nSOURCES:\n1. National Institute of Biomedical Imaging and Bioengineering (NIBIB)",
+    "audioDuration": 10.971,
+    "hasAudio": true,
+    "wordCount": 28,
+    "weakWordCount": 19,
+    "sceneCount": 4,
+    "hasVideo": true,
+    "hasContactSheet": true
+  }
+}

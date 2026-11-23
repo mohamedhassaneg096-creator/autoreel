@@ -1,0 +1,5 @@
+{
+  "llmApiKey": "test-secret-key-4321",
+  "elevenLabsApiKey": "el-secret-9876",
+  "deepgramApiKey": "dg-secret-5555"
+}

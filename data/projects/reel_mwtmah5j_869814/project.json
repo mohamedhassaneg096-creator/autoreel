@@ -1,0 +1,65 @@
+{
+  "id": "reel_mwtmah5j_869814",
+  "topic": "قالب العداد: الكفاءة",
+  "title": "قالب العداد: الكفاءة",
+  "durationSec": 10,
+  "voiceMode": "tts",
+  "voiceId": "",
+  "sources": [],
+  "createdAt": "2026-11-23T18:46:44.311Z",
+  "updatedAt": "2026-11-23T18:47:07.704Z",
+  "activeStage": null,
+  "stages": {
+    "script": {
+      "status": "done",
+      "mode": "approval",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "voice": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "timing": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "storyboard": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    },
+    "render": {
+      "status": "done",
+      "mode": "auto",
+      "error": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "logs": []
+    }
+  },
+  "artifacts": {
+    "scriptText": "تسعة وتسعين في المية بتروح حرارة.",
+    "streamText": "",
+    "audioDuration": 2.71,
+    "hasAudio": true,
+    "wordCount": 6,
+    "weakWordCount": 0,
+    "sceneCount": 1,
+    "hasVideo": true,
+    "hasContactSheet": true
+  }
+}
