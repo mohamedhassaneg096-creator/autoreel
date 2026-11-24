@@ -89,6 +89,12 @@ export function cancelProjectRun(projectId) {
   return false;
 }
 
+export function cancelAllRuns() {
+  for (const projectId of [...activeRuns.keys()]) {
+    cancelProjectRun(projectId);
+  }
+}
+
 export async function runStage(projectId, stage, { serverOrigin } = {}) {
   if (!STAGES.includes(stage)) {
     throw new Error(`Invalid stage: ${stage}`);

@@ -1,10 +1,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export const ROOT_DIR = process.cwd();
-export const DATA_DIR = path.resolve(ROOT_DIR, 'data');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const ROOT_DIR = path.resolve(__dirname, '..');
+export const DATA_DIR = process.env.REEL_STUDIO_DATA_DIR
+  ? path.resolve(process.env.REEL_STUDIO_DATA_DIR)
+  : path.resolve(ROOT_DIR, 'data');
 export const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 export const DEFAULT_FONT_FOLDER = 'assets/fonts';
+export const GITHUB_REPO = 'mohamedhassaneg096-creator/idea2video';
+
+function readAppVersion() {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+    return pkg.version || '1.0.0';
+  } catch {
+    return '1.0.0';
+  }
+}
+
+export const APP_VERSION = readAppVersion();
 
 const dotEnv = {};
 

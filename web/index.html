@@ -239,6 +239,32 @@
           </form>
           <div class="status-banner hidden" id="settings-feedback"></div>
         </section>
+
+        <section class="panel update-panel" id="app-update-panel">
+          <div class="panel-head-row update-head-row">
+            <div>
+              <h2 class="panel-title" style="margin-bottom: 4px;">إصدار التطبيق والتحديثات</h2>
+              <p class="muted">
+                الإصدار الحالي: <strong class="tabular" id="app-current-version">v1.0.0</strong>
+                <span class="update-available-msg hidden" id="update-available-msg"></span>
+              </p>
+            </div>
+            <div class="update-actions">
+              <button type="button" class="btn btn-secondary" id="btn-check-update">التحقق من التحديثات</button>
+              <button type="button" class="btn btn-primary" id="btn-install-update" disabled>تحديث التطبيق</button>
+            </div>
+          </div>
+          <div class="status-banner hidden" id="update-status-banner"></div>
+          <div class="render-progress-box hidden" id="update-progress-box" style="margin-top: 12px;">
+            <div class="progress-label-row">
+              <span id="update-progress-label">جاري تنزيل التحديث...</span>
+              <span class="tabular" id="update-progress-pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="update-progress-fill"></div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
 

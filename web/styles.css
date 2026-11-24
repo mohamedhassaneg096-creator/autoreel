@@ -792,6 +792,29 @@ select:focus {
   color: var(--danger);
 }
 
+.update-panel {
+  margin-top: 20px;
+}
+
+.update-head-row {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.update-available-msg {
+  margin-inline-start: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .search-input {
   max-width: 280px;
 }

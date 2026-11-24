@@ -1,0 +1,39 @@
+appId: com.reelstudio.app
+productName: Reel Studio
+directories:
+  output: dist-installer
+asar: true
+asarUnpack:
+  - node_modules/ffmpeg-static/**/*
+  - node_modules/ffprobe-static/**/*
+files:
+  - electron/**/*
+  - src-server/**/*
+  - web/**/*
+  - render/**/*
+  - references/**/*
+  - assets/**/*
+  - server.mjs
+  - package.json
+  - "!data/**"
+  - "!.env"
+  - "!.env.*"
+  - "!dist-installer/**"
+  - "!tools/**"
+  - "!src/**"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+  artifactName: Reel-Studio-Setup-${version}.${ext}
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Reel Studio
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false

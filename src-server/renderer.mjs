@@ -2,13 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { chromium } from 'playwright';
 import { generateWhooshWav, generateTickWav } from './sfx.mjs';
 import { probeAudioDuration } from './voice.mjs';
+import { getFfmpegPath } from './bins.mjs';
 
 const execFileAsync = promisify(execFile);
 
 export async function launchHeadlessBrowser() {
+  const { chromium } = await import('playwright');
   const launchArgs = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -49,13 +50,15 @@ async function buildMixedAudio({ voicePath, cutTimes, workDir, totalDuration, si
   generateWhooshWav(whooshPath);
   generateTickWav(tickPath);
 
+  const ffmpegBin = getFfmpegPath();
+
   // Build ffmpeg filter_complex mixing voice + soft whoosh/tick on scene cuts, normalized to -14 LUFS
   const args = ['-y', '-i', voicePath];
   const validCuts = cutTimes.filter((t) => t > 0.15 && t < totalDuration - 0.1);
 
   if (validCuts.length === 0) {
     // Voice only, padded to totalDuration and normalized to -14 LUFS
-    await execFileAsync('ffmpeg', [
+    await execFileAsync(ffmpegBin, [
       '-y',
       '-i', voicePath,
       '-af', `apad=whole_dur=${totalDuration.toFixed(3)},loudnorm=I=-14:TP=-1.5:LRA=11`,
@@ -99,7 +102,7 @@ async function buildMixedAudio({ voicePath, cutTimes, workDir, totalDuration, si
     mixedAudioPath
   );
 
-  await execFileAsync('ffmpeg', args, { signal });
+  await execFileAsync(ffmpegBin, args, { signal });
   return mixedAudioPath;
 }
 
@@ -107,7 +110,7 @@ export async function generateContactSheet({ videoPath, outputPath, totalDuratio
   const count = cols * rows;
   const interval = Math.max(0.25, totalDuration / count);
   const fpsVal = (1 / interval).toFixed(4);
-  await execFileAsync('ffmpeg', [
+  await execFileAsync(getFfmpegPath(), [
     '-y',
     '-i', videoPath,
     '-vf', `fps=${fpsVal},scale=270:480,tile=${cols}x${rows}:padding=8:color=#0C1014`,
@@ -160,16 +163,29 @@ export async function renderProjectVideo({
   const outputVideoPath = path.join(projectDir, 'output.mp4');
   const contactSheetPath = path.join(projectDir, 'contact_sheet.jpg');
 
-  if (onLog) onLog(`تشغيل Chromium (720×1280 @1.5x → 1080×1920) لتصوير ${totalFrames} إطاراً...`);
+  const renderPayload = {
+    title,
+    duration: totalDuration,
+    words,
+    storyboard,
+    icons
+  };
 
-  const browser = await launchHeadlessBrowser();
+  const hasElectronBridge = typeof globalThis.__REEL_STUDIO_CAPTURE_RENDERER__ === 'function';
+  if (onLog) {
+    onLog(`تشغيل ${hasElectronBridge ? 'محرك العرض المدمج' : 'Chromium'} (720×1280 @1.5x → 1080×1920) لتصوير ${totalFrames} إطاراً...`);
+  }
+
+  let browser = null;
   let ffmpegProc = null;
 
   const onAbort = () => {
     if (ffmpegProc && !ffmpegProc.killed) {
       ffmpegProc.kill('SIGKILL');
     }
-    browser.close().catch(() => {});
+    if (browser) {
+      browser.close().catch(() => {});
+    }
   };
   if (signal) {
     if (signal.aborted) {
@@ -180,28 +196,8 @@ export async function renderProjectVideo({
   }
 
   try {
-    const context = await browser.newContext({
-      viewport: { width: 720, height: 1280 },
-      deviceScaleFactor: 1.5
-    });
-    const page = await context.newPage();
-
-    const renderUrl = `${serverOrigin}/render/render.html`;
-    await page.goto(renderUrl, { waitUntil: 'networkidle' });
-    await page.evaluate(() => document.fonts.ready);
-
-    await page.evaluate((payload) => {
-      window.setRenderData(payload);
-    }, {
-      title,
-      duration: totalDuration,
-      words,
-      storyboard,
-      icons
-    });
-
     // Spawn ffmpeg stdin MJPEG pipe + mixed audio -> H.264 yuv420p MP4
-    ffmpegProc = spawn('ffmpeg', [
+    ffmpegProc = spawn(getFfmpegPath(), [
       '-y',
       '-f', 'image2pipe',
       '-vcodec', 'mjpeg',
@@ -234,15 +230,7 @@ export async function renderProjectVideo({
       });
     });
 
-    for (let frame = 0; frame < totalFrames; frame++) {
-      if (signal?.aborted) {
-        throw new DOMException('Render aborted', 'AbortError');
-      }
-
-      const t = frame / fps;
-      await page.evaluate((timeSec) => window.drawFrame(timeSec), t);
-      const frameBuffer = await page.screenshot({ type: 'jpeg', quality: 93 });
-
+    const handleFrame = async (frame, t, frameBuffer) => {
       const canContinue = ffmpegProc.stdin.write(frameBuffer);
       if (!canContinue) {
         await new Promise((res) => ffmpegProc.stdin.once('drain', res));
@@ -261,6 +249,43 @@ export async function renderProjectVideo({
             dataUrl: `data:image/jpeg;base64,${frameBuffer.toString('base64')}`
           });
         }
+      }
+    };
+
+    if (hasElectronBridge) {
+      await globalThis.__REEL_STUDIO_CAPTURE_RENDERER__({
+        serverOrigin,
+        payload: renderPayload,
+        totalFrames,
+        fps,
+        signal,
+        onFrame: handleFrame
+      });
+    } else {
+      browser = await launchHeadlessBrowser();
+      const context = await browser.newContext({
+        viewport: { width: 720, height: 1280 },
+        deviceScaleFactor: 1.5
+      });
+      const page = await context.newPage();
+
+      const renderUrl = `${serverOrigin}/render/render.html`;
+      await page.goto(renderUrl, { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+
+      await page.evaluate((payload) => {
+        window.setRenderData(payload);
+      }, renderPayload);
+
+      for (let frame = 0; frame < totalFrames; frame++) {
+        if (signal?.aborted) {
+          throw new DOMException('Render aborted', 'AbortError');
+        }
+
+        const t = frame / fps;
+        await page.evaluate((timeSec) => window.drawFrame(timeSec), t);
+        const frameBuffer = await page.screenshot({ type: 'jpeg', quality: 93 });
+        await handleFrame(frame, t, frameBuffer);
       }
     }
 
@@ -283,6 +308,6 @@ export async function renderProjectVideo({
     };
   } finally {
     if (signal) signal.removeEventListener('abort', onAbort);
-    await browser.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
   }
 }

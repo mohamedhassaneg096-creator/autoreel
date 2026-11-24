@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   ROOT_DIR,
+  DATA_DIR,
+  APP_VERSION,
+  GITHUB_REPO,
   getPublicSettings,
   saveSettings,
   buildFontsCss,
@@ -26,6 +29,11 @@ import {
   appendStageLog
 } from './src-server/projects.mjs';
 import { runStage, approveStage, cancelProjectRun } from './src-server/pipeline.mjs';
+import {
+  getUpdateStatus,
+  checkForUpdates,
+  downloadAndInstallUpdate
+} from './src-server/updater.mjs';
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 4301);
@@ -136,9 +144,10 @@ function serveStatic(res, absPath) {
   fs.createReadStream(absPath).pipe(res);
 }
 
-function getLocalServerOrigin() {
-  const connectHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
-  return `http://${connectHost}:${PORT}`;
+function getLocalServerOrigin(req, fallbackHost = HOST, fallbackPort = PORT) {
+  const connectHost = fallbackHost === '0.0.0.0' ? '127.0.0.1' : fallbackHost;
+  const activePort = req?.socket?.localPort || fallbackPort;
+  return `http://${connectHost}:${activePort}`;
 }
 
 export function createServer() {
@@ -171,6 +180,34 @@ export function createServer() {
         const target = path.join(fontDir, fileName);
         if (!target.startsWith(fontDir)) return sendError(res, 403, 'Forbidden');
         return serveStatic(res, target);
+      }
+
+      // App info & auto-update API
+      if (method === 'GET' && pathname === '/api/app/info') {
+        return sendJson(res, 200, {
+          version: APP_VERSION,
+          repo: GITHUB_REPO,
+          isDesktopApp: Boolean(globalThis.__REEL_STUDIO_DESKTOP__),
+          platform: process.platform,
+          dataDir: DATA_DIR
+        });
+      }
+      if (method === 'GET' && pathname === '/api/update/status') {
+        return sendJson(res, 200, getUpdateStatus());
+      }
+      if (method === 'POST' && pathname === '/api/update/check') {
+        const result = await checkForUpdates();
+        return sendJson(res, 200, result);
+      }
+      if (method === 'POST' && pathname === '/api/update/download-and-install') {
+        const body = await readJsonBody(req).catch(() => ({}));
+        const launchInstaller = body.launchInstaller !== false;
+        if (body.wait === true) {
+          const result = await downloadAndInstallUpdate({ launchInstaller });
+          return sendJson(res, 200, result);
+        }
+        void downloadAndInstallUpdate({ launchInstaller });
+        return sendJson(res, 202, getUpdateStatus());
       }
 
       // Settings API
@@ -217,7 +254,7 @@ export function createServer() {
           approvals: body.approvals
         });
         if (body.autoStart) {
-          const origin = getLocalServerOrigin();
+          const origin = getLocalServerOrigin(req);
           setImmediate(() => {
             runStage(project.id, 'script', { serverOrigin: origin }).catch(() => {});
           });
@@ -335,7 +372,7 @@ export function createServer() {
           if (!STAGES.includes(stage)) return sendError(res, 400, 'مرحلة غير صالحة');
 
           if (method === 'POST' && action === 'run') {
-            const origin = getLocalServerOrigin();
+            const origin = getLocalServerOrigin(req);
             setImmediate(() => {
               runStage(projectId, stage, { serverOrigin: origin }).catch(() => {});
             });
@@ -343,7 +380,7 @@ export function createServer() {
           }
 
           if (method === 'POST' && action === 'approve') {
-            const updated = await approveStage(projectId, stage, { serverOrigin: getLocalServerOrigin() });
+            const updated = await approveStage(projectId, stage, { serverOrigin: getLocalServerOrigin(req) });
             return sendJson(res, 200, { project: updated });
           }
 
@@ -404,11 +441,41 @@ export function createServer() {
   });
 }
 
+export function startServer({ host = HOST, port = PORT, fallbackEphemeral = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+
+    const listenOn = (targetPort, allowFallback) => {
+      const onError = (err) => {
+        if (err && err.code === 'EADDRINUSE' && allowFallback && targetPort !== 0) {
+          listenOn(0, false);
+          return;
+        }
+        reject(err);
+      };
+      server.once('error', onError);
+      server.listen(targetPort, host, () => {
+        server.off('error', onError);
+        const addr = server.address();
+        const actualPort = typeof addr === 'object' && addr ? addr.port : targetPort;
+        const connectHost = host === '0.0.0.0' ? '127.0.0.1' : host;
+        resolve({
+          server,
+          host,
+          port: actualPort,
+          origin: `http://${connectHost}:${actualPort}`
+        });
+      });
+    };
+
+    listenOn(port, fallbackEphemeral);
+  });
+}
+
 // Start server when run directly
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
 if (isMain) {
-  const server = createServer();
-  server.listen(PORT, HOST, () => {
-    console.log(`Reel Studio v1 listening on http://${HOST}:${PORT}`);
+  startServer({ host: HOST, port: PORT }).then(({ origin }) => {
+    console.log(`Reel Studio v1 listening on ${origin}`);
   });
 }

@@ -623,6 +623,7 @@ async function loadSettings() {
   document.getElementById('mask-dg').textContent = s.hasDeepgramApiKey ? `المفتاح الحالي: ${s.deepgramApiKeyMasked}` : 'لا يوجد مفتاح محفوظ';
 
   document.getElementById('set-font-folder').value = s.fontFolder || 'assets/fonts';
+  await loadAppVersionAndUpdateStatus();
 }
 
 document.querySelectorAll('[data-clear]').forEach((btn) => {
@@ -685,8 +686,149 @@ document.getElementById('icons-search').addEventListener('input', (e) => {
   renderIconsGrid(e.target.value);
 });
 
+// App Version & Auto-Update (Settings)
+let updatePollTimer = null;
+
+function renderUpdateState(u, { silent = false } = {}) {
+  if (!u) return;
+  const verEl = document.getElementById('app-current-version');
+  if (verEl && u.currentVersion) {
+    verEl.textContent = `v${u.currentVersion}`;
+  }
+
+  const availMsgEl = document.getElementById('update-available-msg');
+  const checkBtn = document.getElementById('btn-check-update');
+  const installBtn = document.getElementById('btn-install-update');
+  const banner = document.getElementById('update-status-banner');
+  const progBox = document.getElementById('update-progress-box');
+  const progLabel = document.getElementById('update-progress-label');
+  const progPct = document.getElementById('update-progress-pct');
+  const progFill = document.getElementById('update-progress-fill');
+
+  if (!checkBtn || !installBtn || !banner) return;
+
+  const isBusy = u.status === 'checking' || u.status === 'downloading';
+  checkBtn.disabled = isBusy;
+  installBtn.disabled = isBusy || u.status !== 'available';
+
+  if (u.status === 'available' && u.latestVersion) {
+    availMsgEl.textContent = `يتوفر إصدار جديد (v${u.latestVersion})`;
+    availMsgEl.classList.remove('hidden');
+  } else {
+    availMsgEl.classList.add('hidden');
+  }
+
+  if (u.status === 'downloading') {
+    progBox.classList.remove('hidden');
+    const pct = Math.max(0, Math.min(100, Number(u.progress) || 0));
+    progLabel.textContent = u.message || 'جاري تنزيل التحديث...';
+    progPct.textContent = `${pct}%`;
+    progFill.style.width = `${pct}%`;
+  } else if (u.status === 'done') {
+    progBox.classList.remove('hidden');
+    progLabel.textContent = u.message || 'اكتمل التنزيل!';
+    progPct.textContent = '100%';
+    progFill.style.width = '100%';
+  } else {
+    progBox.classList.add('hidden');
+  }
+
+  if (silent && u.status === 'error') {
+    return;
+  }
+
+  if (u.status === 'idle' || !u.message) {
+    banner.classList.add('hidden');
+  } else {
+    banner.textContent = u.message;
+    banner.classList.remove('hidden', 'error');
+    if (u.status === 'error') {
+      banner.classList.add('error');
+    }
+  }
+}
+
+async function loadAppVersionAndUpdateStatus() {
+  try {
+    const [info, status] = await Promise.all([
+      api('/api/app/info'),
+      api('/api/update/status')
+    ]);
+    if (info?.version) {
+      document.getElementById('app-current-version').textContent = `v${info.version}`;
+    }
+    renderUpdateState(status, { silent: true });
+  } catch {
+    // ignore background fetch error
+  }
+}
+
+async function runUpdateCheck({ silent = false } = {}) {
+  if (!silent) {
+    renderUpdateState({
+      status: 'checking',
+      message: 'جاري التحقق من وجود تحديثات...'
+    });
+  }
+  try {
+    const status = await api('/api/update/check', { method: 'POST' });
+    renderUpdateState(status, { silent });
+  } catch (err) {
+    if (!silent) {
+      renderUpdateState({
+        status: 'error',
+        message: `خطأ أثناء التحقق من التحديثات: ${err.message}`
+      });
+    }
+  }
+}
+
+function startUpdatePolling() {
+  if (updatePollTimer) clearInterval(updatePollTimer);
+  updatePollTimer = setInterval(async () => {
+    try {
+      const status = await api('/api/update/status');
+      renderUpdateState(status);
+      if (status.status !== 'downloading' && status.status !== 'checking') {
+        clearInterval(updatePollTimer);
+        updatePollTimer = null;
+      }
+    } catch {
+      clearInterval(updatePollTimer);
+      updatePollTimer = null;
+    }
+  }, 350);
+}
+
+document.getElementById('btn-check-update')?.addEventListener('click', () => {
+  runUpdateCheck({ silent: false });
+});
+
+document.getElementById('btn-install-update')?.addEventListener('click', async () => {
+  renderUpdateState({
+    status: 'downloading',
+    progress: 0,
+    message: 'جاري تنزيل التحديث... (0%)'
+  });
+  try {
+    const initial = await api('/api/update/download-and-install', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+    renderUpdateState(initial);
+    startUpdatePolling();
+  } catch (err) {
+    renderUpdateState({
+      status: 'error',
+      message: `خطأ أثناء التحديث: ${err.message}`
+    });
+  }
+});
+
 // Initial boot
 (async function init() {
+  await loadAppVersionAndUpdateStatus();
+  runUpdateCheck({ silent: true });
   await refreshProjects();
   if (state.projects.length > 0) {
     await selectProject(state.projects[0].id);

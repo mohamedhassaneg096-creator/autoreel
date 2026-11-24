@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getEffectiveSettings } from './env.mjs';
+import { getFfmpegPath, getFfprobePath } from './bins.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -134,7 +135,7 @@ export async function synthesizeElevenLabs({ text, voiceId, outputPath, signal }
 
 export async function probeAudioDuration(audioPath) {
   try {
-    const { stdout } = await execFileAsync('ffprobe', [
+    const { stdout } = await execFileAsync(getFfprobePath(), [
       '-v', 'error',
       '-show_entries', 'format=duration',
       '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -149,7 +150,7 @@ export async function probeAudioDuration(audioPath) {
 
 export async function convertUploadedAudioToMp3({ inputPath, outputPath, signal }) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  await execFileAsync('ffmpeg', [
+  await execFileAsync(getFfmpegPath(), [
     '-y',
     '-i', inputPath,
     '-vn',
